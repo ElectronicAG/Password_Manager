@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>KeyVault — Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+</head>
+<body>
+  <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-icon-sm">🔐</span>
+      <span class="brand-text">KeyVault</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('manager') }}" class="nav-link active">
+        <span class="nav-icon">⊞</span> Manager
+      </a>
+      <a href="{{ url_for('add_entry') }}" class="nav-link">
+        <span class="nav-icon">＋</span> New Entry
+      </a>
+    </nav>
+    <div class="sidebar-actions">
+      <a href="{{ url_for('export_csv') }}" class="btn btn-outline btn-sm">↓ Export CSV</a>
+      <label class="btn btn-outline btn-sm import-label">
+        ↑ Import CSV
+        <form id="importForm" method="POST" enctype="multipart/form-data" action="{{ url_for('import_csv') }}" style="display:none">
+          <input type="file" name="csvfile" accept=".csv" id="csvInput" onchange="document.getElementById('importForm').submit()"/>
+        </form>
+      </label>
+      <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">⏻ Logout</a>
+    </div>
+  </aside>
+
+  <!-- ── Main ────────────────────────────────────────────────────────── -->
+  <main class="main">
+    <header class="page-header">
+      <div>
+        <h2 class="page-title">Passwords</h2>
+        <p class="page-meta">{{ total }} entr{{ 'ies' if total != 1 else 'y' }} found</p>
+      </div>
+      <a href="{{ url_for('add_entry') }}" class="btn btn-primary">+ New</a>
+    </header>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }}">
+          <span class="alert-icon">{{ '✓' if cat == 'success' else '✗' }}</span> {{ msg }}
+        </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- ── Search bar ───────────────────────────────────────────────── -->
+    <form method="GET" action="{{ url_for('manager') }}" class="search-bar" id="searchForm">
+      <div class="search-input-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" name="q" value="{{ q }}" placeholder="Search…" autocomplete="off"
+               id="searchInput" class="search-input" oninput="autoSubmit()"/>
+        {% if q %}
+        <a href="{{ url_for('manager') }}" class="search-clear">✕</a>
+        {% endif %}
+      </div>
+      <select name="field" class="search-field" onchange="document.getElementById('searchForm').submit()">
+        <option value="all" {{ 'selected' if field=='all' }}>All fields</option>
+        <option value="name" {{ 'selected' if field=='name' }}>Name</option>
+        <option value="email" {{ 'selected' if field=='email' }}>Email</option>
+        <option value="link" {{ 'selected' if field=='link' }}>Link</option>
+      </select>
+    </form>
+
+    <!-- ── Table ────────────────────────────────────────────────────── -->
+    {% if entries %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Link</th>
+            <th>Password</th>
+            <th>History</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in entries %}
+          <tr class="entry-row">
+            <td class="id-cell">{{ e.id }}</td>
+            <td>
+              <span class="name-badge">{{ e.name }}</span>
+            </td>
+            <td>
+              <span class="copyable" onclick="copyText('{{ e.email }}', this)" title="Copy">
+                {{ e.email or '—' }}
+              </span>
+            </td>
+            <td>
+              {% if e.link %}
+              <a href="{{ e.link }}" target="_blank" class="link-cell" title="{{ e.link }}">
+                {{ e.link | truncate(30, True, '…') }}
+              </a>
+              {% else %}—{% endif %}
+            </td>
+            <td class="pw-cell">
+              <div class="pw-wrap">
+                <span class="pw-dots" id="pw-{{ loop.index }}">••••••••</span>
+                <span class="pw-real" id="pwr-{{ loop.index }}" style="display:none">{{ e.password }}</span>
+                <button class="icon-btn" onclick="togglePw({{ loop.index }})" title="Show/Hide">👁</button>
+                <button class="icon-btn" onclick="copyText('{{ e.password }}', this)" title="Copy">⎘</button>
+              </div>
+            </td>
+            <td class="history-cell">
+              {% if e.history %}
+                <button class="icon-btn hist-toggle" onclick="toggleHistory('hist-{{ loop.index }}', this)" title="View history">
+                  🕓 {{ e.history | length }}
+                </button>
+                <div class="hist-list" id="hist-{{ loop.index }}" style="display:none">
+                  {% for hw in e.history %}
+                  <div class="hist-item">
+                    <span class="hist-label">#{{ loop.index }}</span>
+                    <span class="hist-pw" id="hpw-{{ loop.parent.index }}-{{ loop.index }}">••••••••</span>
+                    <span class="hist-pw-real" id="hpwr-{{ loop.parent.index }}-{{ loop.index }}" style="display:none">{{ hw }}</span>
+                    <button class="icon-btn" onclick="toggleHistPw('hpw-{{ loop.parent.index }}-{{ loop.index }}','hpwr-{{ loop.parent.index }}-{{ loop.index }}')" title="Show">👁</button>
+                    <button class="icon-btn" onclick="copyText('{{ hw }}', this)" title="Copy">⎘</button>
+                  </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <span class="no-hist">—</span>
+              {% endif %}
+            </td>
+            <td class="actions-cell">
+              <a href="{{ url_for('edit_entry', entry_id=e.id) }}" class="btn btn-ghost btn-xs">✎ Edit</a>
+              <form method="POST" action="{{ url_for('delete_entry', entry_id=e.id) }}"
+                    onsubmit="return confirm('Delete «{{ e.name }}»?')" style="display:inline">
+                <button type="submit" class="btn btn-danger btn-xs">✕</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <p>No entries found{% if q %} for "<strong>{{ q }}</strong>"{% endif %}.</p>
+      <a href="{{ url_for('add_entry') }}" class="btn btn-primary">Add first entry</a>
+    </div>
+    {% endif %}
+  </main>
+
+  <script>
+    // Debounced auto-submit search
+    let searchTimer;
+    function autoSubmit() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => document.getElementById('searchForm').submit(), 350);
+    }
+
+    // Toggle password visibility
+    function togglePw(idx) {
+      const dots = document.getElementById('pw-' + idx);
+      const real = document.getElementById('pwr-' + idx);
+      const hidden = dots.style.display !== 'none';
+      dots.style.display = hidden ? 'none' : 'inline';
+      real.style.display = hidden ? 'inline' : 'none';
+    }
+
+    function toggleHistory(id, btn) {
+      const el = document.getElementById(id);
+      const visible = el.style.display !== 'none';
+      el.style.display = visible ? 'none' : 'block';
+      btn.classList.toggle('active', !visible);
+    }
+
+    function toggleHistPw(dotsId, realId) {
+      const dots = document.getElementById(dotsId);
+      const real = document.getElementById(realId);
+      const hidden = dots.style.display !== 'none';
+      dots.style.display = hidden ? 'none' : 'inline';
+      real.style.display = hidden ? 'inline' : 'none';
+    }
+
+    // Copy to clipboard with visual feedback
+    function copyText(text, el) {
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = el.textContent;
+        el.textContent = '✓ Copied';
+        el.classList.add('copied');
+        setTimeout(() => { el.textContent = orig; el.classList.remove('copied'); }, 1500);
+      });
+    }
+
+    // Import CSV — trigger file input when label clicked
+    document.querySelector('.import-label').addEventListener('click', () => {
+      document.getElementById('csvInput').click();
+    });
+  </script>
+</body>
+</html>

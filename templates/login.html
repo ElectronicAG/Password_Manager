@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>KeyVault — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+</head>
+<body class="login-body">
+  <div class="login-container">
+    <div class="login-brand">
+      <div class="brand-icon">🔐</div>
+      <h1 class="brand-name">KeyVault</h1>
+      <p class="brand-sub">Encrypted password manager</p>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">
+      <span class="alert-icon">✗</span> {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" class="login-form">
+      <div class="field-group">
+        <label for="name">Username</label>
+        <input type="text" id="name" name="name" placeholder="Access name" autocomplete="username" required/>
+      </div>
+      <div class="field-group">
+        <label for="password">Password</label>
+        <div class="input-reveal">
+          <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required/>
+          <button type="button" class="reveal-btn" onclick="toggleReveal('password', this)">👁</button>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">Sign In →</button>
+    </form>
+  </div>
+
+  <div class="login-deco">
+    <div class="deco-lines"></div>
+  </div>
+
+  <script>
+    function toggleReveal(id, btn) {
+      const inp = document.getElementById(id);
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+      btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+    }
+  </script>
+</body>
+</html>
