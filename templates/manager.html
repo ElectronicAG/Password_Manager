@@ -125,9 +125,9 @@
                   {% for hw in e.history %}
                   <div class="hist-item">
                     <span class="hist-label">#{{ loop.index }}</span>
-                    <span class="hist-pw" id="hpw-{{ loop.parent.index }}-{{ loop.index }}">••••••••</span>
-                    <span class="hist-pw-real" id="hpwr-{{ loop.parent.index }}-{{ loop.index }}" style="display:none">{{ hw }}</span>
-                    <button class="icon-btn" onclick="toggleHistPw('hpw-{{ loop.parent.index }}-{{ loop.index }}','hpwr-{{ loop.parent.index }}-{{ loop.index }}')" title="Show">👁</button>
+                    <span class="hist-pw" id="hpw-{{ e.id }}-{{ loop.index }}">••••••••</span>
+                    <span class="hist-pw-real" id="hpwr-{{ e.id }}-{{ loop.index }}" style="display:none">{{ hw }}</span>
+                    <button class="icon-btn" onclick="toggleHistPw('hpw-{{ e.id }}-{{ loop.index }}','hpwr-{{ e.id }}-{{ loop.index }}')" title="Show">👁</button>
                     <button class="icon-btn" onclick="copyText('{{ hw }}', this)" title="Copy">⎘</button>
                   </div>
                   {% endfor %}
