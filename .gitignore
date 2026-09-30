@@ -1,4 +1,43 @@
-.env
 Data_P.json
 __pycache__/
 *.pyc
+# ==========================================
+# Entornos Virtuales y Gestión de Paquetes
+# ==========================================
+.venv/
+venv/
+ENV/
+env/
+
+# ==========================================
+# Archivos de configuración de uv / Python
+# ==========================================
+# NOTA: NO ignores 'uv.lock' ni 'pyproject.toml', ¡esos SÍ van a GitHub!
+.python-version
+.uv/
+
+# ==========================================
+# Archivos temporales de Python (Caché)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ==========================================
+# Seguridad y Variables de Entorno (¡Clave!)
+# ==========================================
+# Como es un Password Manager, NUNCA subas tus llaves secretas o BD locales
+.env
+.env.local
+*.db
+*.sqlite
+
+# ==========================================
+# Sistemas Operativos
+# ==========================================
+.DS_Store
+Thumbs.db
+

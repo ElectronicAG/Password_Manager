@@ -1,94 +1,193 @@
-# 🔐 KeyVault - Password Manager
+# Password Manager con uv (Astral)
 
-KeyVault is a local password manager built with Flask, NaCl encryption, and CSV import/export support.
+Guía para ejecutar la versión reorganizada del proyecto usando los archivos Python entregados. Conserva el `pyproject.toml`, `uv.lock`, las plantillas y los estilos del proyecto original. Puedes guardar esta guía como `README.md` en la raíz del proyecto.
 
-## Installation
+## 1. Instalar uv
+
+**Windows, en PowerShell:**
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+**Linux o macOS:**
 
 ```bash
-# 1. Install the dependencies
-pip install -r requirements.txt
-
-# 2. Configure the credentials
-cp .env.example .env
-# Edit .env and add your username, password, access code, and Flask secret.
-
-# 3. Run the application
-python app.py
-# Open http://localhost:5000
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-## Environment Configuration
+Abre de nuevo la terminal y comprueba la instalación:
 
-Create a `.env` file in the project root with the following variables:
-
-```dotenv
-# KeyVault .env
-# Copy this file as ".env" and complete the values.
-# NEVER upload the real .env file to Git.
-
-# Password manager access credentials
-ADMIN_NAME=
-ADMIN_PASSWORD=
-ADMIN_CODIGN=
-
-# Flask secret key
-# Generate a random value with:
-# python -c "import secrets; print(secrets.token_hex(32))"
-FLASK_SECRET=
+```bash
+uv --version
 ```
 
-> Keep the variable name `ADMIN_CODIGN` unchanged if that is the exact name used by the application. Add `.env` to `.gitignore` and never commit real credentials or secret keys.
+Referencia: [instalación oficial de uv](https://docs.astral.sh/uv/getting-started/installation/).
 
-## Features
+## 2. Colocar los archivos
 
-| Feature | Description |
+Copia los ocho `.py` entregados dentro de `src/password_manager/`, reemplazando las versiones anteriores que tengan el mismo nombre. Todos deben estar juntos en ese paquete.
+
+| Ruta desde la raíz del proyecto | Función |
 | --- | --- |
-| 🔐 Secure login | Authentication using the username and password stored in `.env` |
-| 🔒 NaCl encryption | Passwords encrypted with PyNaCl SecretBox (XSalsa20-Poly1305) |
-| ⌕ Real-time search | Instant filtering by name, email address, or URL |
-| ⚙ Password generator | Adjustable length, uppercase letters, numbers, special characters, and a strength indicator |
-| ✎ Entry editing | Update any stored field, including the password |
-| ↓ CSV export | Download all decrypted entries as a CSV file |
-| ↑ CSV import | Import entries from an external CSV file and encrypt them automatically |
-| ⎘ Copy to clipboard | Copy an email address or password with one click |
+| `pyproject.toml` | Dependencias, versión de Python y comando de inicio |
+| `uv.lock` | Versiones resueltas de las dependencias |
+| `README.md` | Documentación del proyecto |
+| `src/password_manager/__init__.py` | Crea la aplicación con `create_app()` y define `main()` |
+| `src/password_manager/__main__.py` | Permite ejecutar el paquete con `python -m` |
+| `src/password_manager/password_manager.py` | Expone la aplicación WSGI como `app` |
+| `src/password_manager/config.py` | Carga la configuración |
+| `src/password_manager/crypto.py` | Cifra y descifra contraseñas |
+| `src/password_manager/storage.py` | Lee y guarda los registros JSON |
+| `src/password_manager/services.py` | Gestiona entradas, historial, búsquedas y CSV |
+| `src/password_manager/routes.py` | Define las rutas web |
+| `src/password_manager/templates/` | Conserva `login.html`, `manager.html`, `add.html` y `edit.html` |
+| `src/password_manager/static/style.css` | Conserva los estilos originales |
+| `src/password_manager/.env` | Credenciales y claves locales |
+| `src/password_manager/Data_P.json` | Datos; se crea al guardar por primera vez |
 
-## Security
+Los nombres deben ser exactos: si una descarga se llama `__init__(1).py`, renómbrala a `__init__.py`.
 
-- Passwords are encrypted with **NaCl SecretBox** (XSalsa20-Poly1305) before they are saved to the JSON file.
-- The encryption key is derived from `ADMIN_PASSWORD` using SHA-256.
-- If you change `ADMIN_PASSWORD` in `.env`, **you will no longer be able to decrypt previously stored entries**. Export them to CSV before changing it.
-- The `Data_P.json` file never stores passwords in plain text.
-- Add both `Data_P.json` and `.env` to `.gitignore`.
-- CSV exports contain decrypted credentials. Store them securely and delete them when they are no longer needed.
-- Use a long, unique value for `ADMIN_PASSWORD` and generate `FLASK_SECRET` with the command shown above.
+## 3. Instalar Python y las dependencias
 
-Recommended `.gitignore` entries:
+Abre la terminal en la carpeta que contiene `pyproject.toml`. Por ejemplo, si estás en su carpeta superior:
 
-```gitignore
-.env
-Data_P.json
-__pycache__/
-*.pyc
+```bash
+cd password_manager
 ```
 
-## Project Structure
+El proyecto original requiere Python **3.14 o superior**. Para utilizar 3.14:
+
+```bash
+uv python install 3.14
+uv python pin 3.14
+uv sync
+```
+
+`uv sync` prepara el entorno `.venv` e instala el proyecto y sus dependencias declaradas: Flask, PyNaCl y python-dotenv. No necesitas activar el entorno manualmente al utilizar `uv run`.
+
+Tu `pyproject.toml` ya incluye el comando de inicio:
+
+```toml
+[project.scripts]
+password-manager = "password_manager:main"
+```
+
+Esto indica que `password-manager` ejecuta la función `main()` del paquete `password_manager`, definida en `__init__.py`.
+
+Referencias: [instalar Python](https://docs.astral.sh/uv/guides/install-python/) y [sincronizar el entorno](https://docs.astral.sh/uv/concepts/projects/sync/).
+
+## 4. Configurar el archivo .env
+
+Si ya tienes un `.env`, conserva sus valores y revisa que esté en:
 
 ```text
-passmanager/
-├── app.py              # Flask backend
-├── requirements.txt
-├── .env.example        # Configuration template
-├── .env                # Local configuration - DO NOT commit
-├── Data_P.json         # Auto-generated encrypted database
-├── static/
-│   └── style.css       # Global styles
-└── templates/
-    ├── login.html
-    ├── manager.html    # Main view with real-time search
-    ├── add.html        # Add entry and generate a password
-    └── edit.html       # Edit entry and generate a password
+src/password_manager/.env
 ```
 
-## Acknowledgments
+Para una instalación nueva, crea ese archivo usando este esquema y reemplaza los valores de ejemplo:
 
-This project was developed with assistance from **Claude Opus 4.7**.
+```dotenv
+ADMIN_NAME=tu_usuario
+ADMIN_PASSWORD="REEMPLAZAR_POR_TU_CONTRASENA"
+ADMIN_CODIGN="REEMPLAZAR_POR_UN_SECRETO_ALEATORIO"
+FLASK_SECRET="REEMPLAZAR_POR_OTRO_SECRETO_ALEATORIO"
+```
+
+| Variable | Uso |
+| --- | --- |
+| `ADMIN_NAME` | Usuario para iniciar sesión |
+| `ADMIN_PASSWORD` | Contraseña para iniciar sesión |
+| `ADMIN_CODIGN` | Secreto del que se deriva la clave para cifrar los datos |
+| `FLASK_SECRET` | Clave para firmar las cookies de sesión |
+| `DATA_FILE` | Ruta opcional para guardar el JSON en otra ubicación |
+
+El nombre `ADMIN_CODIGN` se conserva exactamente así por compatibilidad con tu código anterior.
+
+Para generar un secreto, ejecuta:
+
+```bash
+uv run python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+En una instalación nueva, ejecútalo dos veces y usa un resultado distinto para `ADMIN_CODIGN` y `FLASK_SECRET`.
+
+**Si ya guardaste contraseñas, conserva el valor anterior de `ADMIN_CODIGN`.** Cambiarlo no vuelve a cifrar los registros y hará que la aplicación no pueda descifrarlos. Cambiar `ADMIN_PASSWORD` modifica el acceso, pero no cambia la clave de cifrado.
+
+Si omites `DATA_FILE`, se usa `src/password_manager/Data_P.json`. Para otra ubicación, es preferible una ruta absoluta. Una ruta relativa se interpreta desde el directorio donde inicias el proceso.
+
+Las variables que ya estén definidas en el entorno tienen prioridad sobre el `.env`. Reinicia la aplicación después de cambiar la configuración.
+
+## 5. Ejecutar la aplicación
+
+Desde la raíz del proyecto:
+
+```bash
+uv run password-manager
+```
+
+También puedes iniciar el paquete con:
+
+```bash
+uv run python -m password_manager
+```
+
+Abre en el navegador:
+
+[http://127.0.0.1:5000](http://127.0.0.1:5000)
+
+Inicia sesión con los valores de `ADMIN_NAME` y `ADMIN_PASSWORD`. Para detener el servidor, pulsa **Ctrl+C** en la terminal.
+
+Para los siguientes arranques basta con `uv run password-manager`: uv comprueba el entorno antes de ejecutar el comando.
+
+Referencia: [ejecutar comandos con uv](https://docs.astral.sh/uv/concepts/projects/run/).
+
+## 6. Por qué se usan imports con punto
+
+En este código:
+
+```python
+from . import create_app
+```
+
+El punto significa «desde el paquete actual». Importa `create_app` desde el `__init__.py` de `password_manager`.
+
+Este otro ejemplo importa desde un módulo del mismo paquete:
+
+```python
+from .config import load_config
+```
+
+Ejecutar con `uv run python -m password_manager` permite que Python reconozca ese contexto de paquete. Ejecutar directamente el archivo interno con `python src/password_manager/password_manager.py` puede producir un error de importación relativa.
+
+## 7. Uso del gestor
+
+- **Agregar:** guarda nombre, enlace, correo y contraseña.
+- **Buscar:** filtra por nombre, correo, enlace o contraseña.
+- **Editar:** actualiza los campos y conserva hasta dos contraseñas anteriores cuando cambia la contraseña.
+- **Generar:** crea una contraseña con las opciones elegidas.
+- **Exportar CSV:** descarga las credenciales con las contraseñas en texto legible.
+- **Importar CSV:** requiere columnas `name` y `password`; admite `link` y `email`. Las filas sin nombre o contraseña se omiten.
+- **Exportar JSON:** descarga los registros con contraseñas e historial cifrados; nombre, correo y enlace siguen siendo legibles.
+
+Para recuperar un respaldo JSON, detén la aplicación, conserva una copia del archivo actual y coloca el respaldo en la ruta de `DATA_FILE`. Debes usar el mismo `ADMIN_CODIGN` con el que se cifró el respaldo. La interfaz no incluye importación de JSON.
+
+## 8. Problemas frecuentes
+
+| Problema | Qué revisar |
+| --- | --- |
+| `uv` no se reconoce | Reabre la terminal y verifica que la instalación haya añadido uv al `PATH`. |
+| No se encuentra `pyproject.toml` | Sitúate en la raíz del proyecto. |
+| Python incompatible | Ejecuta `uv python install 3.14`, `uv python pin 3.14` y `uv sync`. |
+| No se encuentra `password-manager` | Revisa `[project.scripts]` y ejecuta `uv sync`. |
+| `attempted relative import with no known parent package` | Usa `uv run password-manager` o `uv run python -m password_manager`. |
+| `TemplateNotFound` | Comprueba que `templates/` esté junto a `__init__.py` y contenga los HTML originales. |
+| Credenciales incorrectas | Revisa el `.env` del paquete y posibles variables del entorno que lo sobrescriban. |
+| No se pudo acceder a los datos | Comprueba el JSON, sus permisos y el valor original de `ADMIN_CODIGN`; conserva el archivo antes de modificarlo. |
+| El puerto 5000 está ocupado | Detén la otra instancia o ejecuta `uv run flask --app password_manager:create_app run --port 5001` y abre el puerto 5001. |
+
+## Alcance de esta versión
+
+El comando principal inicia el servidor local de Flask en `127.0.0.1`, con depuración desactivada. El repositorio JSON coordina operaciones dentro de una instancia; para varios procesos necesita otro mecanismo de persistencia.
+
+En la preparación del código se verificaron la sintaxis y las operaciones de almacenamiento. No se ejecutó la aplicación completa en el entorno de entrega porque sus dependencias no estaban disponibles. Después de instalar con uv, comprueba el inicio de sesión y las operaciones con una entrada de prueba antes de usar datos reales.
