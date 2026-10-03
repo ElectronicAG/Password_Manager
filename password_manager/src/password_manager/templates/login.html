@@ -6,10 +6,15 @@
   <title>KeyVault — Login</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <script src="{{ url_for('static', filename='theme.js') }}"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
 </head>
 <body class="login-body">
   <div class="login-container">
+    <button type="button" class="btn theme-toggle" data-theme-toggle aria-label="Switch to night mode">
+        <span data-theme-icon aria-hidden="true">☾</span>
+        <span data-theme-label>Night mode</span>
+      </button>
     <div class="login-brand">
       <div class="brand-icon">🔐</div>
       <h1 class="brand-name">KeyVault</h1>
